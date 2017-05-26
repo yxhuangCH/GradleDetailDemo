@@ -1,0 +1,129 @@
+apply plugin: 'com.android.application'  // Android 依赖库
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    defaultConfig {
+        applicationId "cash.juzhongke.com.gradledetaildemo"
+        minSdkVersion 22
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+        // 设置测试执行器
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        releas {
+            storeFile file(KEY_STORE_FIELD)
+        }
+
+        debug {
+//            storeFile file()
+//            keyAlias
+//            keyPassword
+//            storePassword
+        }
+
+        staging.initWith(signingConfigs.debug) // staging 和 debug 版本一样的签名信息
+
+
+        xiaomi {
+//            storeFile file()
+//            keyAlias
+//            keyPassword
+//            storePassword
+        }
+    }
+
+    // 不同渠道版本
+    productFlavors {
+        commonsoon {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "commonsoon"]
+
+            applicationId 'cash.juzhongke.com.gradledetaildemo.commonsoon'
+            versionCode 3
+            minSdkVersion 23
+        }
+        zhushou91 {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "zhushou91"]
+        }
+        market360 {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "market360"]
+        }
+        xiaomi {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "xiaomi"]
+        }
+        wandoujia {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "wandoujia"]
+        }
+    }
+
+    // 构建类型
+    buildTypes {
+        release {
+            minifyEnabled false  // 禁用清除无用的资源
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // 配置log，在 Release 版本中不打印，
+            buildConfigField "boolean", "LOG_CALLS", "false";
+            // 配置不同的 URL
+            buildConfigField "String", "API_URL", "\"Http://example.com/api\""
+            // 添加签名信息
+            signingConfig signingConfigs.releas
+            // 指定渠道产品特定签名
+//            productFlavors.xiaomi.signingConfig signingConfigs.xiaomi
+        }
+
+        debug {
+            buildConfigField "boolean", "LOG_CALLS", "true";
+            buildConfigField "String", "API_URL", "\"Http://texst.example.com/api\""
+//            signingConfig signingConfigs.debug
+            // 开启测试覆盖率
+            testCoverageEnabled = true
+        }
+
+        // 自定义构建类型(命令行可以 ./gradlew assembleStaging)
+        staging {
+            staging.initWith(buildTypes.debug) // 复制一个已经存在的构建类型所有属性，可以重写，例如下面的 API_URL
+            applicationIdSuffix ".staging"  // 生成的 applicationId 变成 包名.staging, 这里是  cash.juzhongke.com.gradledetaildemo.staging
+            versionNameSuffix "staging"
+            buildConfigField "String", "API_URL", "\"Http://staging.example.com/api\""
+//            signingConfig signingConfigs.staging
+        }
+    }
+
+    // variant 过滤器，这里是忽略 xiaomi release 版本， 在 BuildVariants 中可以看到结果
+    android.variantFilter { variant ->
+        if (variant.buildType.name.equals('release')){
+            variant.getFlavors().each(){ flavor ->
+                if (flavor.name.equals('xiaomi')){
+                    variant.setIgnore(true);
+                }
+            }
+        }
+    }
+
+    // 构建时，剔除一下文件
+    packagingOptions {
+        exclude( 'LICENSE.txt')
+    }
+
+}
+
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])  // 本地依赖
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
+    // 依赖项目
+    compile project(':mylibrary')
+
+    compile 'com.android.support:appcompat-v7:25.3.1'
+
+    // 测试
+    testCompile 'junit:junit:4.12'
+    // 可以针对特定的 flavor 添加 Junit
+    testXiaomiCompile 'junit:junit:4.12'
+}

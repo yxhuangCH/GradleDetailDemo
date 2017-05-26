@@ -1,0 +1,79 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.3'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        // jcenter 仓库
+        jcenter()
+        // Maven Central
+        mavenCentral()
+        // 本地 Maven 仓库
+        mavenLocal()
+        // 自有的 Maven 插件, 例子
+        maven {
+            url "http://repo.acmecorp.com/maven2"
+        }
+        // 团队自己的仓库
+        maven {
+            url "http://repo.acmecorp.com/maven2"
+            credentials {
+                username '****'
+                password '*****'
+            }
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+// 定义一个任务来获取 Release Password
+task getReleasePassword << {
+    def keypassword = ''
+    def storepassword = ''
+    def keyalies = ''
+    if (rootProject.file('private.properties').exists()){
+        Properties properties = new Properties();
+        properties.load(rootProject.file('private.properties').newDataInputStream())
+        keypassword = properties.getProperty('release.password')
+        storepassword = properties.getProperty('release.storepassword')
+        keyalies = properties.getProperty('release.keyalies')
+
+    }
+
+    // 如果password 为空，private.properties 文件找不到，则询问控制台用户输入
+    if (!keypassword?.trim()){
+        keypassword = new String(System.console().readPassword("\nWhat's the secret password?"))
+    }
+
+    android.signingConfigs.release.keyPassword = keypassword
+    android.signingConfigs.release.storePassword = storepassword
+    android.signingConfigs.release.keyAlias = keyalies
+
+}
+
+tasks.whenTaskAdded { theTask ->
+    println theTask.name
+    if (theTask.name.contains("Release")){
+        theTask.dependsOn "getReleasePassword"
+    }
+}
+
+// 自定义熟悉
+ext {
+    compileSdkVersion = 25
+    buildToolsVersion = "25.0.3"
+
+}
