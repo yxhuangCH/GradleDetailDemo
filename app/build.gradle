@@ -9,6 +9,9 @@ android {
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
+        // resConfigs 配置保留资源
+        resConfigs "en", "cn", "da"    // 例如保留英语，中文，丹麦的字符串
+        resConfigs "hdpi", "xhdpi", "xxhdpi"
         // 设置测试执行器
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -25,7 +28,7 @@ android {
 //            storePassword
         }
 
-        staging.initWith(signingConfigs.debug) // staging 和 debug 版本一样的签名信息
+        staging.initWith(signingConfigs.releas) // staging 和 release 版本一样的签名信息
 
 
         xiaomi {
@@ -41,9 +44,9 @@ android {
         commonsoon {
             manifestPlaceholders = [UMENG_CHANNEL_VALUE: "commonsoon"]
 
-            applicationId 'cash.juzhongke.com.gradledetaildemo.commonsoon'
-            versionCode 3
-            minSdkVersion 23
+//            applicationId 'cash.juzhongke.com.gradledetaildemo.commonsoon'
+//            versionCode 3
+//            minSdkVersion 23
         }
         zhushou91 {
             manifestPlaceholders = [UMENG_CHANNEL_VALUE: "zhushou91"]
@@ -62,14 +65,15 @@ android {
     // 构建类型
     buildTypes {
         release {
-            minifyEnabled false  // 禁用清除无用的资源
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled false  // 是否开启混淆
+            shrinkResources false  // 自动缩减资源，需要同时与 minifyEnabled 开启
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'   // 混淆配置文件
             // 配置log，在 Release 版本中不打印，
             buildConfigField "boolean", "LOG_CALLS", "false";
             // 配置不同的 URL
             buildConfigField "String", "API_URL", "\"Http://example.com/api\""
             // 添加签名信息
-            signingConfig signingConfigs.releas
+//            signingConfig signingConfigs.releas
             // 指定渠道产品特定签名
 //            productFlavors.xiaomi.signingConfig signingConfigs.xiaomi
         }
@@ -79,7 +83,7 @@ android {
             buildConfigField "String", "API_URL", "\"Http://texst.example.com/api\""
 //            signingConfig signingConfigs.debug
             // 开启测试覆盖率
-            testCoverageEnabled = true
+//            testCoverageEnabled = true
         }
 
         // 自定义构建类型(命令行可以 ./gradlew assembleStaging)
@@ -108,6 +112,11 @@ android {
         exclude( 'LICENSE.txt')
     }
 
+
+    // 禁止 lint , 默认是开启的
+    lintOptions {
+        abortOnError false
+    }
 }
 
 
