@@ -9,7 +9,7 @@ android {
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
-        // resConfigs 配置保留资源
+        //  收到缩减 resConfigs 配置保留资源
         resConfigs "en", "cn", "da"    // 例如保留英语，中文，丹麦的字符串
         resConfigs "hdpi", "xhdpi", "xxhdpi"
         // 设置测试执行器
@@ -17,8 +17,11 @@ android {
     }
 
     signingConfigs {
-        releas {
+        release {
             storeFile file(KEY_STORE_FIELD)
+//            keyAlias "Releasekey"
+//            keyPassword   "password"
+//            storePassword  "password"
         }
 
         debug {
@@ -28,37 +31,14 @@ android {
 //            storePassword
         }
 
-        staging.initWith(signingConfigs.releas) // staging 和 release 版本一样的签名信息
+        staging.initWith(signingConfigs.release) // staging 和 release 版本一样的签名信息
 
-
+        // 可以为特定的 flavor 签名
         xiaomi {
 //            storeFile file()
 //            keyAlias
 //            keyPassword
 //            storePassword
-        }
-    }
-
-    // 不同渠道版本
-    productFlavors {
-        commonsoon {
-            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "commonsoon"]
-
-//            applicationId 'cash.juzhongke.com.gradledetaildemo.commonsoon'
-//            versionCode 3
-//            minSdkVersion 23
-        }
-        zhushou91 {
-            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "zhushou91"]
-        }
-        market360 {
-            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "market360"]
-        }
-        xiaomi {
-            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "xiaomi"]
-        }
-        wandoujia {
-            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "wandoujia"]
         }
     }
 
@@ -73,7 +53,7 @@ android {
             // 配置不同的 URL
             buildConfigField "String", "API_URL", "\"Http://example.com/api\""
             // 添加签名信息
-//            signingConfig signingConfigs.releas
+            signingConfig signingConfigs.release
             // 指定渠道产品特定签名
 //            productFlavors.xiaomi.signingConfig signingConfigs.xiaomi
         }
@@ -92,7 +72,31 @@ android {
             applicationIdSuffix ".staging"  // 生成的 applicationId 变成 包名.staging, 这里是  cash.juzhongke.com.gradledetaildemo.staging
             versionNameSuffix "staging"
             buildConfigField "String", "API_URL", "\"Http://staging.example.com/api\""
-//            signingConfig signingConfigs.staging
+            signingConfig signingConfigs.release
+        }
+    }
+
+  //   不同渠道版本
+    productFlavors {
+        commonsoon {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "commonsoon"]
+
+            // 可以自定义自己的 applicationId
+            applicationId 'cash.juzhongke.com.gradledetaildemo.commonsoon'
+            versionCode 3
+            minSdkVersion 23
+        }
+        zhushou91 {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "zhushou91"]
+        }
+        market360 {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "market360"]
+        }
+        xiaomi {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "xiaomi"]
+        }
+        wandoujia {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "wandoujia"]
         }
     }
 
@@ -104,6 +108,15 @@ android {
                     variant.setIgnore(true);
                 }
             }
+        }
+    }
+
+    // 自动命名 apk
+    android.applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def file = output.outputFile
+            output.outputFile = new File(file.parent,
+                file.name.replace(".apk", "-${variant.versionName}.apk"))
         }
     }
 
@@ -119,6 +132,36 @@ android {
     }
 }
 
+// 定义一个任务来获取 Release Password
+task getReleasePassword << {
+    def keypassword = ''
+    def storepassword = ''
+    def keyalies = ''
+    if (rootProject.file('private.properties').exists()){
+        Properties properties = new Properties();
+        properties.load(rootProject.file('private.properties').newDataInputStream())
+        keypassword = properties.getProperty('release.password')
+        storepassword = properties.getProperty('release.storepassword')
+        keyalies = properties.getProperty('release.keyalies')
+
+    }
+
+    // 如果password 为空，private.properties 文件找不到，则询问控制台用户输入
+    if (!keypassword?.trim()){
+        keypassword = new String(System.console().readPassword("\nWhat's the secret password?"))
+    }
+
+    android.signingConfigs.release.keyPassword = keypassword
+    android.signingConfigs.release.storePassword = storepassword
+    android.signingConfigs.release.keyAlias = keyalies
+}
+
+// 运行时才添加，相当于 Hook
+tasks.whenTaskAdded { theTask ->
+    if (theTask.name.contains("Release")){
+        theTask.dependsOn "getReleasePassword"
+    }
+}
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])  // 本地依赖
@@ -134,5 +177,5 @@ dependencies {
     // 测试
     testCompile 'junit:junit:4.12'
     // 可以针对特定的 flavor 添加 Junit
-    testXiaomiCompile 'junit:junit:4.12'
+//    testXiaomiCompile 'junit:junit:4.12'
 }
