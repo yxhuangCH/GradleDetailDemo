@@ -10,8 +10,8 @@ android {
         versionCode 1
         versionName "1.0"
         //  收到缩减 resConfigs 配置保留资源
-        resConfigs "en", "cn", "da"    // 例如保留英语，中文，丹麦的字符串
-        resConfigs "hdpi", "xhdpi", "xxhdpi"
+//        resConfigs "en", "cn", "da"    // 例如保留英语，中文，丹麦的字符串
+//        resConfigs "hdpi", "xhdpi", "xxhdpi"
         // 设置测试执行器
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
